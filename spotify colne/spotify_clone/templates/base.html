@@ -1,0 +1,123 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}Spotifyclone{% endblock %}</title>
+  <link rel="stylesheet" href="{% static 'css/main.css' %}">
+</head>
+<body>
+
+  <div class="app-layout">
+
+    <!-- Sidebar -->
+    <nav class="sidebar">
+      <div class="sidebar-logo">
+        <span class="logo-icon">♫</span>
+        <span class="logo-text">Spotifyclone</span>
+      </div>
+
+      <div class="sidebar-section">
+        <a href="{% url 'home' %}" class="nav-link {% if request.resolver_match.url_name == 'home' %}active{% endif %}">
+          <span class="nav-icon">🏠</span> Home
+        </a>
+        <a href="{% url 'search' %}" class="nav-link {% if request.resolver_match.url_name == 'search' %}active{% endif %}">
+          <span class="nav-icon">🔍</span> Search
+        </a>
+      </div>
+
+      <div class="sidebar-section">
+        <p class="sidebar-label">Your Library</p>
+        {% if user.is_authenticated %}
+          <a href="{% url 'my_playlists' %}" class="nav-link">
+            <span class="nav-icon">📚</span> Playlists
+          </a>
+          <a href="{% url 'liked_songs' %}" class="nav-link">
+            <span class="nav-icon">❤️</span> Liked Songs
+          </a>
+          <a href="{% url 'create_playlist' %}" class="nav-link">
+            <span class="nav-icon">➕</span> New Playlist
+          </a>
+        {% endif %}
+      </div>
+
+      <div class="sidebar-bottom">
+        {% if user.is_authenticated %}
+          <a href="{% url 'profile' %}" class="nav-link">
+            <span class="nav-icon">👤</span> {{ user.username }}
+          </a>
+          <a href="{% url 'logout' %}" class="nav-link">
+            <span class="nav-icon">🚪</span> Logout
+          </a>
+        {% else %}
+          <a href="{% url 'register' %}" class="btn btn-outline">Sign Up</a>
+          <a href="{% url 'login' %}" class="btn btn-green">Log In</a>
+        {% endif %}
+      </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="main-content">
+      <!-- Top bar with search -->
+      <div class="topbar">
+        <form action="{% url 'search' %}" method="get" class="search-form">
+          <input type="text" name="q" placeholder="Search songs, albums, artists…"
+                 value="{{ request.GET.q }}" class="search-input">
+          <button type="submit" class="search-btn">🔍</button>
+        </form>
+      </div>
+
+      <div class="page-body">
+        {% if messages %}
+          {% for message in messages %}
+            <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+          {% endfor %}
+        {% endif %}
+        {% block content %}{% endblock %}
+      </div>
+    </main>
+  </div>
+
+  <!-- Persistent Player Bar -->
+  <div class="player-bar" id="player-bar">
+    <div class="player-song-info">
+      <img id="player-cover" src="{% static 'images/default-cover.svg' %}" alt="cover">
+      <div class="player-meta">
+        <p id="player-title">No song playing</p>
+        <p id="player-artist" class="player-subtitle"></p>
+      </div>
+      <button id="like-btn" class="like-btn" onclick="toggleLike()" title="Like">♡</button>
+    </div>
+
+    <div class="player-center">
+      <div class="player-controls">
+        <button onclick="shuffleQueue()" title="Shuffle" class="ctrl-btn" id="shuffle-btn">🔀</button>
+        <button onclick="prevSong()" title="Previous" class="ctrl-btn">⏮</button>
+        <button onclick="togglePlay()" title="Play/Pause" class="ctrl-btn play-btn" id="play-btn">▶</button>
+        <button onclick="nextSong()" title="Next" class="ctrl-btn">⏭</button>
+        <button onclick="toggleRepeat()" title="Repeat" class="ctrl-btn" id="repeat-btn">🔁</button>
+      </div>
+      <div class="progress-wrap">
+        <span id="current-time">0:00</span>
+        <input type="range" id="progress" value="0" min="0" max="100" step="0.1">
+        <span id="total-time">0:00</span>
+      </div>
+    </div>
+
+    <div class="player-right">
+      <span class="vol-icon">🔊</span>
+      <input type="range" id="volume" value="80" min="0" max="100">
+    </div>
+  </div>
+
+  <audio id="audio-player"></audio>
+
+  <!-- Hidden YouTube player (renders as 0x0, audio only effectively) -->
+  <div id="yt-player" style="position:fixed;bottom:90px;right:0;width:0;height:0;overflow:hidden;"></div>
+
+  <!-- YouTube IFrame API must load before player.js -->
+  <script src="https://www.youtube.com/iframe_api"></script>
+  <script src="{% static 'js/player.js' %}"></script>
+</body>
+</html>

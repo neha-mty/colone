@@ -1,0 +1,38 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Liked Songs — Spotifyclone{% endblock %}
+
+{% block content %}
+<div class="liked-hero">
+  <div class="liked-hero-icon">❤️</div>
+  <div>
+    <p class="album-type">Playlist</p>
+    <h1 class="album-title">Liked Songs</h1>
+    <p class="album-meta">{{ songs.count }} songs</p>
+  </div>
+</div>
+
+<div class="song-list" id="liked-queue">
+  {% for song in songs %}
+  <div class="song-row"
+       data-id="{{ song.pk }}"
+       data-src="{% if song.audio_file %}{{ song.audio_file.url }}{% endif %}"
+       data-title="{{ song.title }}"
+       data-artist="{{ song.artist.name }}"
+       data-cover="{% if song.album and song.album.cover_image %}{{ song.album.cover_image.url }}{% else %}{% static 'images/default-cover.svg' %}{% endif %}"
+       data-ytid="{{ song.youtube_id }}"
+       onclick="playSongFromQueue('liked-queue', {{ forloop.counter0 }})">
+    <span class="song-num">{{ forloop.counter }}</span>
+    <img src="{% if song.album and song.album.cover_image %}{{ song.album.cover_image.url }}{% else %}{% static 'images/default-cover.svg' %}{% endif %}"
+         class="song-thumb" alt="">
+    <div class="song-info-text">
+      <p class="song-title">{{ song.title }}</p>
+      <p class="song-artist-sm">{{ song.artist.name }}</p>
+    </div>
+    <span class="song-duration">{{ song.duration_display }}</span>
+  </div>
+  {% empty %}
+  <p class="empty-msg">You haven't liked any songs yet.</p>
+  {% endfor %}
+</div>
+{% endblock %}

@@ -1,0 +1,44 @@
+{% extends 'base.html' %}
+{% block title %}Your Library — Spotifyclone{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h1 class="page-title">Your Library</h1>
+  <a href="{% url 'create_playlist' %}" class="btn btn-outline">+ New Playlist</a>
+</div>
+
+<div class="card-grid">
+  <!-- Liked Songs card -->
+  <a href="{% url 'liked_songs' %}" class="card">
+    <div class="card-img-wrap">
+      <div class="card-img-placeholder liked-gradient">❤️</div>
+      <div class="card-play-overlay">▶</div>
+    </div>
+    <p class="card-title">Liked Songs</p>
+    <p class="card-subtitle">{{ request.user.liked_songs.count }} songs</p>
+  </a>
+
+  {% for playlist in playlists %}
+  <div class="card card-with-actions">
+    <a href="{% url 'playlist_detail' playlist.pk %}" class="card-link">
+      <div class="card-img-wrap">
+        {% if playlist.cover_image %}
+          <img src="{{ playlist.cover_image.url }}" alt="{{ playlist.name }}" class="card-img">
+        {% else %}
+          <div class="card-img-placeholder">🎵</div>
+        {% endif %}
+        <div class="card-play-overlay">▶</div>
+      </div>
+      <p class="card-title">{{ playlist.name }}</p>
+      <p class="card-subtitle">{{ playlist.songs.count }} songs</p>
+    </a>
+    <form method="post" action="{% url 'delete_playlist' playlist.pk %}" class="delete-form">
+      {% csrf_token %}
+      <button type="submit" class="delete-btn" title="Delete playlist" onclick="return confirm('Delete this playlist?')">🗑</button>
+    </form>
+  </div>
+  {% empty %}
+  <p class="empty-msg">No playlists yet.</p>
+  {% endfor %}
+</div>
+{% endblock %}

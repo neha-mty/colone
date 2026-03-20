@@ -1,0 +1,49 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}{{ album.title }} — Spotifyclone{% endblock %}
+
+{% block content %}
+<div class="album-hero">
+  <img src="{{ album.cover_image.url }}" alt="{{ album.title }}" class="album-hero-cover">
+  <div class="album-hero-info">
+    <p class="album-type">Album</p>
+    <h1 class="album-title">{{ album.title }}</h1>
+    <p class="album-meta">
+      <a href="{% url 'artist_detail' album.artist.pk %}" class="link-green">{{ album.artist.name }}</a>
+      &nbsp;•&nbsp; {{ album.release_date.year }}
+      {% if album.genre %} &nbsp;•&nbsp; {{ album.genre }} {% endif %}
+      &nbsp;•&nbsp; {{ album.songs.count }} songs
+    </p>
+    <button class="btn btn-green" onclick="playAlbum()">▶ Play</button>
+  </div>
+</div>
+
+<div class="song-list" id="album-queue">
+  {% for song in album.songs.all %}
+  <div class="song-row"
+       data-id="{{ song.pk }}"
+       data-src="{% if song.audio_file %}{{ song.audio_file.url }}{% endif %}"
+       data-title="{{ song.title }}"
+       data-artist="{{ song.artist.name }}"
+       data-cover="{{ album.cover_image.url }}"
+       data-ytid="{{ song.youtube_id }}"
+       onclick="playSongFromQueue('album-queue', {{ forloop.counter0 }})">
+    <span class="song-num">{{ song.track_number }}</span>
+    <div class="song-info-text">
+      <p class="song-title">{{ song.title }}</p>
+      <p class="song-artist-sm">{{ song.artist.name }}</p>
+    </div>
+    <span class="song-plays">{{ song.play_count }} plays</span>
+    <span class="song-duration">{{ song.duration_display }}</span>
+  </div>
+  {% empty %}
+  <p class="empty-msg">No songs in this album yet.</p>
+  {% endfor %}
+</div>
+
+<script>
+function playAlbum() {
+  playSongFromQueue('album-queue', 0);
+}
+</script>
+{% endblock %}

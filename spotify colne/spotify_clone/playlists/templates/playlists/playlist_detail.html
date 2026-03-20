@@ -1,0 +1,57 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}{{ playlist.name }} — Spotifyclone{% endblock %}
+
+{% block content %}
+<div class="album-hero">
+  <div class="card-img-wrap playlist-hero-img">
+    {% if playlist.cover_image %}
+      <img src="{{ playlist.cover_image.url }}" alt="{{ playlist.name }}" class="card-img">
+    {% else %}
+      <div class="card-img-placeholder large-placeholder">🎵</div>
+    {% endif %}
+  </div>
+  <div class="album-hero-info">
+    <p class="album-type">Playlist</p>
+    <h1 class="album-title">{{ playlist.name }}</h1>
+    <p class="album-meta">
+      By {{ playlist.owner.username }} &nbsp;•&nbsp;
+      {{ playlist.songs.count }} songs &nbsp;•&nbsp;
+      {{ playlist.total_duration }}
+    </p>
+    {% if playlist.songs.count > 0 %}
+    <button class="btn btn-green" onclick="playSongFromQueue('playlist-queue', 0)">▶ Play</button>
+    {% endif %}
+  </div>
+</div>
+
+<div class="song-list" id="playlist-queue">
+  {% for song in playlist.songs.all %}
+  <div class="song-row"
+       data-id="{{ song.pk }}"
+       data-src="{% if song.audio_file %}{{ song.audio_file.url }}{% endif %}"
+       data-title="{{ song.title }}"
+       data-artist="{{ song.artist.name }}"
+       data-cover="{% if song.album and song.album.cover_image %}{{ song.album.cover_image.url }}{% else %}{% static 'images/default-cover.svg' %}{% endif %}"
+       data-ytid="{{ song.youtube_id }}"
+       onclick="playSongFromQueue('playlist-queue', {{ forloop.counter0 }})">
+    <span class="song-num">{{ forloop.counter }}</span>
+    <img src="{% if song.album and song.album.cover_image %}{{ song.album.cover_image.url }}{% else %}{% static 'images/default-cover.svg' %}{% endif %}"
+         class="song-thumb" alt="">
+    <div class="song-info-text">
+      <p class="song-title">{{ song.title }}</p>
+      <p class="song-artist-sm">{{ song.artist.name }}</p>
+    </div>
+    <span class="song-duration">{{ song.duration_display }}</span>
+    {% if playlist.owner == request.user %}
+    <form method="post" action="{% url 'remove_from_playlist' playlist.pk song.pk %}" style="margin:0">
+      {% csrf_token %}
+      <button type="submit" class="remove-btn" title="Remove">✕</button>
+    </form>
+    {% endif %}
+  </div>
+  {% empty %}
+  <p class="empty-msg">This playlist is empty. Search for songs to add them.</p>
+  {% endfor %}
+</div>
+{% endblock %}

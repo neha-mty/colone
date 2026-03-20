@@ -1,0 +1,79 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Home — Spotifyclone{% endblock %}
+
+{% block content %}
+<section class="section">
+  <h2 class="section-title">🔥 Top Tracks</h2>
+  <div class="song-list" id="main-queue">
+    {% for song in songs %}
+    <div class="song-row"
+         data-id="{{ song.pk }}"
+         data-src="{% if song.audio_file %}{{ song.audio_file.url }}{% endif %}"
+         data-title="{{ song.title }}"
+         data-artist="{{ song.artist.name }}"
+         data-cover="{% if song.album and song.album.cover_image %}{{ song.album.cover_image.url }}{% else %}{% static 'images/default-cover.svg' %}{% endif %}"
+         data-ytid="{{ song.youtube_id }}"
+         onclick="playSongFromQueue('main-queue', {{ forloop.counter0 }})">
+      <span class="song-num">{{ forloop.counter }}</span>
+      <img src="{% if song.album and song.album.cover_image %}{{ song.album.cover_image.url }}{% else %}{% static 'images/default-cover.svg' %}{% endif %}"
+           class="song-thumb" alt="{{ song.title }}">
+      <div class="song-info-text">
+        <p class="song-title">{{ song.title }}</p>
+        <p class="song-artist-sm">
+          <a href="{% url 'artist_detail' song.artist.pk %}">{{ song.artist.name }}</a>
+        </p>
+      </div>
+      <span class="song-album-col">
+        {% if song.album %}
+          <a href="{% url 'album_detail' song.album.pk %}">{{ song.album.title }}</a>
+        {% endif %}
+      </span>
+      <span class="song-plays">{{ song.play_count }} plays</span>
+      <span class="song-duration">{{ song.duration_display }}</span>
+    </div>
+    {% empty %}
+    <p class="empty-msg">No songs yet. Add some via the <a href="/admin/">admin panel</a>.</p>
+    {% endfor %}
+  </div>
+</section>
+
+<section class="section">
+  <h2 class="section-title">🎵 New Albums</h2>
+  <div class="card-grid">
+    {% for album in albums %}
+    <a href="{% url 'album_detail' album.pk %}" class="card">
+      <div class="card-img-wrap">
+        <img src="{{ album.cover_image.url }}" alt="{{ album.title }}" class="card-img">
+        <div class="card-play-overlay">▶</div>
+      </div>
+      <p class="card-title">{{ album.title }}</p>
+      <p class="card-subtitle">{{ album.artist.name }}</p>
+    </a>
+    {% empty %}
+    <p class="empty-msg">No albums yet.</p>
+    {% endfor %}
+  </div>
+</section>
+
+<section class="section">
+  <h2 class="section-title">🎤 Artists</h2>
+  <div class="card-grid">
+    {% for artist in artists %}
+    <a href="{% url 'artist_detail' artist.pk %}" class="card">
+      <div class="card-img-wrap">
+        {% if artist.photo %}
+          <img src="{{ artist.photo.url }}" alt="{{ artist.name }}" class="card-img card-img-round">
+        {% else %}
+          <div class="card-img-placeholder card-img-round">🎤</div>
+        {% endif %}
+      </div>
+      <p class="card-title">{{ artist.name }}</p>
+      <p class="card-subtitle">Artist</p>
+    </a>
+    {% empty %}
+    <p class="empty-msg">No artists yet.</p>
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}

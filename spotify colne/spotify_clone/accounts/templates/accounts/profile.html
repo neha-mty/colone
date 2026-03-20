@@ -1,0 +1,45 @@
+{% extends 'base.html' %}
+{% block title %}{{ user.username }} — Spotifyclone{% endblock %}
+
+{% block content %}
+<div class="profile-hero">
+  <div class="profile-avatar">
+    {% if user.profile_picture %}
+      <img src="{{ user.profile_picture.url }}" alt="{{ user.username }}" class="profile-pic">
+    {% else %}
+      <div class="profile-pic-placeholder">{{ user.username|first|upper }}</div>
+    {% endif %}
+  </div>
+  <div class="profile-info">
+    <p class="album-type">Profile</p>
+    <h1 class="album-title">{{ user.username }}</h1>
+    {% if user.bio %}<p class="artist-bio">{{ user.bio }}</p>{% endif %}
+    <p class="album-meta">
+      {{ user.playlists.count }} playlists &nbsp;•&nbsp;
+      {{ user.liked_songs.count }} liked songs
+    </p>
+  </div>
+</div>
+
+<section class="section">
+  <h2 class="section-title">Your Playlists</h2>
+  <div class="card-grid">
+    {% for playlist in user.playlists.all %}
+    <a href="{% url 'playlist_detail' playlist.pk %}" class="card">
+      <div class="card-img-wrap">
+        {% if playlist.cover_image %}
+          <img src="{{ playlist.cover_image.url }}" alt="{{ playlist.name }}" class="card-img">
+        {% else %}
+          <div class="card-img-placeholder">🎵</div>
+        {% endif %}
+        <div class="card-play-overlay">▶</div>
+      </div>
+      <p class="card-title">{{ playlist.name }}</p>
+      <p class="card-subtitle">{{ playlist.songs.count }} songs</p>
+    </a>
+    {% empty %}
+    <p class="empty-msg">No playlists yet. <a href="{% url 'create_playlist' %}" class="link-green">Create one</a></p>
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}
