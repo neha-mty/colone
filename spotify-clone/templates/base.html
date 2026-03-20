@@ -5,6 +5,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>{% block title %}Spotifyclone{% endblock %}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Figtree:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="{% static 'css/main.css' %}">
 </head>
 <body>
@@ -26,6 +28,17 @@
           <span class="nav-icon">🔍</span> Search
         </a>
       </div>
+
+      <!-- ── NEW: Browse section ── -->
+      <div class="sidebar-section">
+        <a href="{% url 'browse_home' %}" class="nav-link {% if request.resolver_match.url_name == 'browse_home' %}active{% endif %}">
+          <span class="nav-icon">🌍</span> Browse
+        </a>
+        <a href="{% url 'browse_artists' %}" class="nav-link {% if request.resolver_match.url_name == 'browse_artists' %}active{% endif %}">
+          <span class="nav-icon">🎤</span> Artists
+        </a>
+      </div>
+      <!-- ── END NEW ── -->
 
       <div class="sidebar-section">
         <p class="sidebar-label">Your Library</p>
@@ -58,9 +71,8 @@
     </nav>
 
     <!-- Main Content -->
-    <main class="main-content">
-      <!-- Top bar with search -->
-      <div class="topbar">
+    <main class="main-content" id="main-content">
+      <div class="topbar" id="topbar">
         <form action="{% url 'search' %}" method="get" class="search-form">
           <input type="text" name="q" placeholder="Search songs, albums, artists…"
                  value="{{ request.GET.q }}" class="search-input">
@@ -69,20 +81,44 @@
       </div>
 
       <div class="page-body">
-        {% if messages %}
-          {% for message in messages %}
-            <div class="alert alert-{{ message.tags }}">{{ message }}</div>
-          {% endfor %}
-        {% endif %}
         {% block content %}{% endblock %}
       </div>
     </main>
   </div>
 
-  <!-- Persistent Player Bar -->
+  <!-- Django messages (hidden, read by JS toast system) -->
+  <div id="django-messages" style="display:none">
+    {% if messages %}
+      {% for message in messages %}
+        <span data-tags="{{ message.tags }}">{{ message }}</span>
+      {% endfor %}
+    {% endif %}
+  </div>
+
+  <!-- Toast -->
+  <div class="spotify-toast" id="spotify-toast">
+    <span class="toast-icon" id="toast-icon">✓</span>
+    <span class="toast-text" id="toast-text"></span>
+  </div>
+
+  <!-- ═══════════════════════════════════════
+       PLAYER BAR
+       play-btn uses data-state="paused|playing|loading"
+       CSS swaps the emoji via content property
+  ════════════════════════════════════════ -->
   <div class="player-bar" id="player-bar">
+
+    <!-- Left: Now playing info -->
     <div class="player-song-info">
-      <img id="player-cover" src="{% static 'images/default-cover.svg' %}" alt="cover">
+      <div class="vinyl-wrap" id="vinyl-wrap">
+        <img id="player-cover" src="{% static 'images/default-cover.svg' %}" alt="cover">
+        <div class="vinyl-ring"></div>
+        <div class="vinyl-hole"></div>
+        <!-- Equalizer bars shown when playing -->
+        <div class="player-eq" id="player-eq">
+          <span></span><span></span><span></span><span></span>
+        </div>
+      </div>
       <div class="player-meta">
         <p id="player-title">No song playing</p>
         <p id="player-artist" class="player-subtitle"></p>
@@ -90,13 +126,19 @@
       <button id="like-btn" class="like-btn" onclick="toggleLike()" title="Like">♡</button>
     </div>
 
+    <!-- Center: Controls + progress -->
     <div class="player-center">
       <div class="player-controls">
         <button onclick="shuffleQueue()" title="Shuffle" class="ctrl-btn" id="shuffle-btn">🔀</button>
-        <button onclick="prevSong()" title="Previous" class="ctrl-btn">⏮</button>
-        <button onclick="togglePlay()" title="Play/Pause" class="ctrl-btn play-btn" id="play-btn">▶</button>
-        <button onclick="nextSong()" title="Next" class="ctrl-btn">⏭</button>
-        <button onclick="toggleRepeat()" title="Repeat" class="ctrl-btn" id="repeat-btn">🔁</button>
+        <button onclick="prevSong()"     title="Previous" class="ctrl-btn">⏮</button>
+
+        <!-- THE FIXED PLAY BUTTON — data-state drives CSS icon swap -->
+        <button onclick="togglePlay()" title="Play/Pause"
+                class="ctrl-btn play-btn" id="play-btn"
+                data-state="paused">▶</button>
+
+        <button onclick="nextSong()"     title="Next"    class="ctrl-btn">⏭</button>
+        <button onclick="toggleRepeat()" title="Repeat"  class="ctrl-btn" id="repeat-btn">🔁</button>
       </div>
       <div class="progress-wrap">
         <span id="current-time">0:00</span>
@@ -105,6 +147,7 @@
       </div>
     </div>
 
+    <!-- Right: Volume -->
     <div class="player-right">
       <span class="vol-icon">🔊</span>
       <input type="range" id="volume" value="80" min="0" max="100">
@@ -112,12 +155,55 @@
   </div>
 
   <audio id="audio-player"></audio>
-
-  <!-- Hidden YouTube player (renders as 0x0, audio only effectively) -->
   <div id="yt-player" style="position:fixed;bottom:90px;right:0;width:0;height:0;overflow:hidden;"></div>
 
-  <!-- YouTube IFrame API must load before player.js -->
   <script src="https://www.youtube.com/iframe_api"></script>
   <script src="{% static 'js/player.js' %}"></script>
+
+  <script>
+    /* ── Toast system ── */
+    const toastEl   = document.getElementById('spotify-toast');
+    const toastText = document.getElementById('toast-text');
+    const toastIcon = document.getElementById('toast-icon');
+    let toastQueue = [], toastTimer = null, isShowing = false;
+    const iconMap  = { success:'✓', error:'✕', warning:'⚠', info:'ℹ', debug:'ℹ' };
+
+    function showToast(message, tags) {
+      toastQueue.push({ message, tags });
+      if (!isShowing) processQueue();
+    }
+    function processQueue() {
+      if (!toastQueue.length) { isShowing = false; return; }
+      isShowing = true;
+      const { message, tags } = toastQueue.shift();
+      const tag = (tags || '').split(' ').find(t => iconMap[t]) || 'success';
+      toastIcon.textContent = iconMap[tag] || '✓';
+      toastEl.className     = `spotify-toast toast-${tag}`;
+      toastText.textContent = message;
+      toastEl.classList.add('show');
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => {
+        toastEl.classList.remove('show');
+        setTimeout(processQueue, 350);
+      }, 3000);
+    }
+    window.showToast = showToast;
+
+    /* ── Read Django messages on load ── */
+    document.addEventListener('DOMContentLoaded', () => {
+      document.querySelectorAll('#django-messages span[data-tags]').forEach(s => {
+        showToast(s.textContent.trim(), s.dataset.tags);
+      });
+    });
+
+    /* ── Topbar scroll glass effect ── */
+    const mainEl = document.getElementById('main-content');
+    const topbar = document.getElementById('topbar');
+    if (mainEl) {
+      mainEl.addEventListener('scroll', () => {
+        topbar.classList.toggle('scrolled', mainEl.scrollTop > 40);
+      });
+    }
+  </script>
 </body>
 </html>

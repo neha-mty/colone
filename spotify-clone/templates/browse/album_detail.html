@@ -1,0 +1,90 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}{{ album.name }} — Spotifyclone{% endblock %}
+
+{% block content %}
+
+<!-- Album Hero -->
+<div class="album-hero">
+  <img src="{{ album.image }}" class="album-hero-cover"
+       alt="{{ album.name }}"
+       onerror="this.src='{% static 'images/default-cover.svg' %}'">
+
+  <div class="album-hero-info">
+    <p class="album-type">Album</p>
+    <h1 class="album-title">{{ album.name }}</h1>
+    <p class="album-meta">
+      <a href="{% url 'jamendo_artist' album.artist_id %}"
+         class="link-green" style="font-weight:700;">
+        {{ album.artist_name }}
+      </a>
+      &nbsp;•&nbsp; {{ album.releasedate|slice:":4" }}
+      &nbsp;•&nbsp; {{ tracks|length }} track{{ tracks|length|pluralize }}
+    </p>
+
+    <div style="display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
+      {% if tracks %}
+      <button class="btn btn-green"
+              onclick="playSongFromQueue('album-queue', 0)">
+        ▶&nbsp; Play Album
+      </button>
+      {% endif %}
+      <span class="cc-badge cc-badge-lg">CC Licensed — Free to Stream</span>
+    </div>
+  </div>
+</div>
+
+<!-- Track List -->
+{% if tracks %}
+<div class="song-list-header">
+  <span>#</span>
+  <span></span>
+  <span>Title</span>
+  <span class="song-album-col">Album</span>
+  <span style="text-align:right;">Duration</span>
+  <span></span>
+</div>
+
+<div class="song-list" id="album-queue">
+  {% for track in tracks %}
+  <div class="song-row"
+       data-id=""
+       data-src="{{ track.audio }}"
+       data-title="{{ track.name }}"
+       data-artist="{{ album.artist_name }}"
+       data-cover="{{ track.image }}"
+       data-ytid=""
+       onclick="playSongFromQueue('album-queue', {{ forloop.counter0 }})">
+
+    <span class="song-num">{{ forloop.counter }}</span>
+
+    <img src="{{ track.image }}" class="song-thumb"
+         alt="{{ track.name }}" loading="lazy"
+         onerror="this.src='{% static 'images/default-cover.svg' %}'">
+
+    <div class="song-info-text">
+      <p class="song-title">{{ track.name }}</p>
+      <p class="song-artist-sm">{{ album.artist_name }}</p>
+    </div>
+
+    <span class="song-album-col">{{ album.name }}</span>
+
+    <span class="song-duration">
+      {% if track.duration %}{{ track.duration|floatformat:0 }}s{% else %}—{% endif %}
+    </span>
+
+    <div class="song-actions">
+      <span class="cc-badge">CC</span>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+
+{% else %}
+<div class="empty-state" style="padding:60px 0;">
+  <div class="empty-state-icon">💿</div>
+  <p style="font-weight:700; font-size:18px;">No tracks found for this album.</p>
+</div>
+{% endif %}
+
+{% endblock %}

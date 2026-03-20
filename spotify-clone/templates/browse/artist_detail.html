@@ -1,0 +1,93 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}{{ artist.name }} — Spotifyclone{% endblock %}
+
+{% block content %}
+
+<!-- Artist Hero -->
+<div class="artist-hero">
+  {% if artist.image %}
+    <img src="{{ artist.image }}" class="artist-hero-img"
+         alt="{{ artist.name }}"
+         onerror="this.style.display='none'">
+  {% else %}
+    <div class="artist-hero-placeholder">🎤</div>
+  {% endif %}
+
+  <div class="album-hero-info">
+    <p class="album-type">Artist</p>
+    <h1 class="album-title">{{ artist.name }}</h1>
+    <p class="album-meta">
+      {{ tracks|length }} popular track{{ tracks|length|pluralize }}
+      &nbsp;•&nbsp; {{ albums|length }} album{{ albums|length|pluralize }}
+    </p>
+    {% if tracks %}
+    <button class="btn btn-green"
+            onclick="playSongFromQueue('top-tracks-queue', 0)">
+      ▶&nbsp; Play
+    </button>
+    {% endif %}
+  </div>
+</div>
+
+<!-- Top Tracks -->
+{% if tracks %}
+<section class="section">
+  <h2 class="section-title">Popular Tracks</h2>
+  <div class="song-list" id="top-tracks-queue">
+    {% for track in tracks %}
+    <div class="song-row"
+         data-id=""
+         data-src="{{ track.audio }}"
+         data-title="{{ track.name }}"
+         data-artist="{{ artist.name }}"
+         data-cover="{{ track.image }}"
+         data-ytid=""
+         onclick="playSongFromQueue('top-tracks-queue', {{ forloop.counter0 }})">
+      <span class="song-num">{{ forloop.counter }}</span>
+      <img src="{{ track.image }}" class="song-thumb"
+           alt="{{ track.name }}" loading="lazy"
+           onerror="this.src='{% static 'images/default-cover.svg' %}'">
+      <div class="song-info-text">
+        <p class="song-title">{{ track.name }}</p>
+        <p class="song-artist-sm">{{ artist.name }}</p>
+      </div>
+      <span class="song-album-col">{{ track.album_name }}</span>
+      <span class="song-duration">
+        {% if track.duration %}{{ track.duration|floatformat:0 }}s{% endif %}
+      </span>
+      <div class="song-actions">
+        <span class="cc-badge">CC</span>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</section>
+{% endif %}
+
+<!-- Albums -->
+{% if albums %}
+<section class="section">
+  <h2 class="section-title">Albums</h2>
+  <div class="card-grid">
+    {% for album in albums %}
+    <a href="{% url 'jamendo_album' album.id %}"
+       class="card" style="text-decoration:none;">
+      <div class="card-img-wrap">
+        <img src="{{ album.image }}" class="card-img"
+             alt="{{ album.name }}" loading="lazy"
+             onerror="this.src='{% static 'images/default-cover.svg' %}'">
+        <button class="card-play-overlay"
+                onclick="event.preventDefault(); event.stopPropagation();">▶</button>
+      </div>
+      <div class="card-title">{{ album.name }}</div>
+      <div class="card-subtitle">
+        {{ album.releasedate|slice:":4" }}
+      </div>
+    </a>
+    {% endfor %}
+  </div>
+</section>
+{% endif %}
+
+{% endblock %}

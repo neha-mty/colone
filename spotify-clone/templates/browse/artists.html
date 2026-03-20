@@ -1,0 +1,66 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Browse Artists — Spotifyclone{% endblock %}
+
+{% block content %}
+
+<div class="page-header">
+  <h1 class="page-title">Artists</h1>
+</div>
+
+<!-- Genre filter pills -->
+<div class="genre-pills">
+  <a href="{% url 'browse_artists' %}"
+     class="genre-pill {% if not selected_genre %}active{% endif %}">All</a>
+  {% for genre in genres %}
+  <a href="{% url 'browse_artists' %}?genre={{ genre }}"
+     class="genre-pill {% if selected_genre == genre %}active{% endif %}">
+    {{ genre|capfirst }}
+  </a>
+  {% endfor %}
+</div>
+
+<!-- Search -->
+<form method="get" action="{% url 'browse_artists' %}" class="browse-search-form">
+  {% if selected_genre %}
+    <input type="hidden" name="genre" value="{{ selected_genre }}">
+  {% endif %}
+  <input type="text" name="q" value="{{ query }}"
+         placeholder="Search artists…" class="search-input"
+         style="max-width:300px; background:var(--bg-elevated); color:#fff;">
+  <button type="submit" class="btn btn-green btn-sm">Search</button>
+</form>
+
+<!-- Artists grid -->
+<div class="card-grid" style="margin-top:24px;">
+  {% for artist in artists %}
+  <a href="{% url 'jamendo_artist' artist.id %}"
+     class="card artist" style="text-align:center; text-decoration:none;">
+    <div class="card-img-wrap">
+      {% if artist.image %}
+        <img src="{{ artist.image }}" class="card-img card-img-round"
+             alt="{{ artist.name }}" loading="lazy"
+             onerror="this.src='{% static 'images/default-cover.svg' %}'">
+      {% else %}
+        <div class="card-img-placeholder card-img-round">🎤</div>
+      {% endif %}
+      <button class="card-play-overlay"
+              onclick="event.preventDefault(); event.stopPropagation();">▶</button>
+    </div>
+    <div class="card-title">{{ artist.name }}</div>
+    <div class="card-subtitle">Artist</div>
+  </a>
+  {% empty %}
+  <div class="empty-state" style="grid-column:1/-1; padding:60px 0;">
+    <div class="empty-state-icon">🎤</div>
+    <p style="font-weight:700; font-size:18px; margin-bottom:8px;">
+      No artists found
+    </p>
+    <p style="color:var(--text-secondary);">
+      Try a different genre or search term.
+    </p>
+  </div>
+  {% endfor %}
+</div>
+
+{% endblock %}

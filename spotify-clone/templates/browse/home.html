@@ -1,0 +1,140 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Browse Music — Spotifyclone{% endblock %}
+
+{% block content %}
+
+<!-- Hero -->
+<div class="browse-hero">
+  <div class="browse-hero-text">
+    <p class="album-type">500,000+ Free Tracks</p>
+    <h1 class="album-title" style="font-size:clamp(28px,5vw,48px);">
+      Discover Free Music
+    </h1>
+    <p style="color:var(--text-secondary); margin-bottom:24px; max-width:480px; line-height:1.6;">
+      Real artists. Real albums. All Creative Commons licensed —
+      free to stream forever. Powered by
+      <a href="https://jamendo.com" target="_blank" class="link-green">Jamendo</a>.
+    </p>
+    <a href="{% url 'browse_artists' %}" class="btn btn-green">Browse Artists</a>
+  </div>
+  <div class="browse-hero-orb"></div>
+</div>
+
+<!-- Trending Tracks -->
+<section class="section">
+  <div class="page-header">
+    <h2 class="section-title">🔥 Trending This Week</h2>
+    <a href="{% url 'browse_artists' %}" class="link-green"
+       style="font-size:13px; font-weight:700;">See all artists →</a>
+  </div>
+
+  {% if trending %}
+  <div class="song-list" id="trending-queue">
+    {% for track in trending %}
+    <div class="song-row"
+         data-id=""
+         data-src="{{ track.audio }}"
+         data-title="{{ track.name }}"
+         data-artist="{{ track.artist_name }}"
+         data-cover="{{ track.image }}"
+         data-ytid=""
+         onclick="playSongFromQueue('trending-queue', {{ forloop.counter0 }})">
+      <span class="song-num">{{ forloop.counter }}</span>
+      <img src="{{ track.image }}" class="song-thumb"
+           alt="{{ track.name }}" loading="lazy"
+           onerror="this.src='{% static 'images/default-cover.svg' %}'">
+      <div class="song-info-text">
+        <p class="song-title">{{ track.name }}</p>
+        <p class="song-artist-sm">
+          <a href="{% url 'jamendo_artist' track.artist_id %}">
+            {{ track.artist_name }}
+          </a>
+        </p>
+      </div>
+      <span class="song-album-col">{{ track.album_name }}</span>
+      <span class="song-duration">
+        {% if track.duration %}
+          {{ track.duration|floatformat:0 }}s
+        {% endif %}
+      </span>
+      <div class="song-actions">
+        <span class="cc-badge" title="Creative Commons — free to stream">CC</span>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <p class="empty-msg">Could not load tracks. Check your internet connection.</p>
+  {% endif %}
+</section>
+
+<!-- Featured Albums -->
+<section class="section">
+  <div class="page-header">
+    <h2 class="section-title">💿 Popular Albums</h2>
+  </div>
+  {% if featured_albums %}
+  <div class="card-grid">
+    {% for album in featured_albums %}
+    <a href="{% url 'jamendo_album' album.id %}" class="card"
+       style="text-decoration:none;">
+      <div class="card-img-wrap">
+        <img src="{{ album.image }}" class="card-img" alt="{{ album.name }}"
+             loading="lazy"
+             onerror="this.src='{% static 'images/default-cover.svg' %}'">
+        <button class="card-play-overlay"
+                onclick="event.preventDefault(); event.stopPropagation();">▶</button>
+      </div>
+      <div class="card-title">{{ album.name }}</div>
+      <div class="card-subtitle">{{ album.artist_name }}</div>
+    </a>
+    {% endfor %}
+  </div>
+  {% else %}
+  <p class="empty-msg">No albums found.</p>
+  {% endif %}
+</section>
+
+<!-- New Releases -->
+<section class="section">
+  <div class="page-header">
+    <h2 class="section-title">🆕 New Releases</h2>
+  </div>
+  {% if new_tracks %}
+  <div class="song-list" id="new-queue">
+    {% for track in new_tracks %}
+    <div class="song-row"
+         data-id=""
+         data-src="{{ track.audio }}"
+         data-title="{{ track.name }}"
+         data-artist="{{ track.artist_name }}"
+         data-cover="{{ track.image }}"
+         data-ytid=""
+         onclick="playSongFromQueue('new-queue', {{ forloop.counter0 }})">
+      <span class="song-num">{{ forloop.counter }}</span>
+      <img src="{{ track.image }}" class="song-thumb"
+           alt="{{ track.name }}" loading="lazy"
+           onerror="this.src='{% static 'images/default-cover.svg' %}'">
+      <div class="song-info-text">
+        <p class="song-title">{{ track.name }}</p>
+        <p class="song-artist-sm">
+          <a href="{% url 'jamendo_artist' track.artist_id %}">
+            {{ track.artist_name }}
+          </a>
+        </p>
+      </div>
+      <span class="song-album-col">{{ track.releasedate }}</span>
+      <span class="song-duration">—</span>
+      <div class="song-actions">
+        <span class="cc-badge">CC</span>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <p class="empty-msg">No new tracks found.</p>
+  {% endif %}
+</section>
+
+{% endblock %}
